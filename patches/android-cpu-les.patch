@@ -33,3 +33,46 @@
      const auto it = dev ? pimpl->alloc_only_buft.find(dev) : pimpl->alloc_only_buft.end();
      if (it == pimpl->alloc_only_buft.end()) {
          throw std::runtime_error(format(
+--- a/src/llama-moe-slot.cpp
++++ b/src/llama-moe-slot.cpp
+@@ -1328,6 +1328,10 @@
+     ///   "auto"     → 按阶段（prefill 绕、decode 不绕）
+     ///   "1"        → 全程绕过
+     static int nocache_mode() {
++#if !defined(F_NOCACHE)
++        // F_NOCACHE is an Apple extension. Linux/Android keep their normal page cache.
++        return 0;
++#else
+         static const int m = [] {
+             const char * e = std::getenv("LLAMA_MOE_F_NOCACHE");
+             if (!e || !*e || std::strcmp(e, "0") == 0) {
+@@ -1336,6 +1340,7 @@
+             return std::strcmp(e, "auto") == 0 ? -1 : 1;
+         }();
+         return m;
++#endif
+     }
+ 
+     bool experts_nocache_desired() const {
+@@ -1345,7 +1350,7 @@
+ 
+     /// 把已打开的 experts fd 的 F_NOCACHE 拨到 `on`。只改缓存行为，不动数据。
+     void apply_experts_nocache(bool on) {
+-#ifndef _WIN32
++#if defined(F_NOCACHE)
+         std::lock_guard<std::mutex> lock(fd_mutex);
+         for (const auto & kv : fds) {
+             if (fcntl(kv.second, F_NOCACHE, on ? 1 : 0) != 0) {
+@@ -1372,9 +1377,11 @@
+         const int fd = _open(path.c_str(), _O_RDONLY | _O_BINARY);
+ #else
+         const int fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
+-        if (experts_nocache_desired() && fcntl(fd, F_NOCACHE, 1) != 0) {
++#if defined(F_NOCACHE)
++        if (fd >= 0 && experts_nocache_desired() && fcntl(fd, F_NOCACHE, 1) != 0) {
+             moe_log("F_NOCACHE 设置失败: %s", std::strerror(errno));
+         }
++#endif
+ #endif
+         if (fd < 0) {
+             throw std::runtime_error(format("failed to open MoE experts file '%s': %s", path.c_str(), std::strerror(errno)));
