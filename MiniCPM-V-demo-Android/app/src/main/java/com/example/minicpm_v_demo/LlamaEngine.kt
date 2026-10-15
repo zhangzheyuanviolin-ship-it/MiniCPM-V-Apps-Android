@@ -29,6 +29,8 @@ import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
+private class ContextCapacityException(message: String) : RuntimeException(message)
+
 sealed class LlamaState {
     object Uninitialized : LlamaState()
     object Initializing : LlamaState()
@@ -1202,8 +1204,8 @@ class LlamaEngine private constructor(
 
             processUserPrompt(message, predictLength).let { result ->
                 if (result != 0) {
-                    throw RuntimeException(if (result == 3) context.getString(R.string.moe_context_full)
-                        else "Failed to process user prompt: $result")
+                    if (result == 3) throw ContextCapacityException(context.getString(R.string.moe_context_full))
+                    throw RuntimeException("Failed to process user prompt: $result")
                 }
             }
 
@@ -1226,7 +1228,7 @@ class LlamaEngine private constructor(
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error during generation!", e)
-            _state.value = LlamaState.Error(e)
+            _state.value = if (e is ContextCapacityException) LlamaState.ModelReady else LlamaState.Error(e)
             throw e
         }
     }.flowOn(llamaDispatcher)
