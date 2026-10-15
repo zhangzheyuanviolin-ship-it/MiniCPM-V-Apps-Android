@@ -14,7 +14,6 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +44,13 @@ class InferenceForegroundService : Service() {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true).setOnlyAlertOnce(true).setSilent(true).setShowWhen(false)
             .build()
-        val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        ServiceCompat.startForeground(this, 4707, notification, type)
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(4707, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            startForeground(4707, notification, 0)
+        } else {
+            startForeground(4707, notification)
+        }
         Log.i("InferenceForeground", "Local model foreground service started")
     }
 

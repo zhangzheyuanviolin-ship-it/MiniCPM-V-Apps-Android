@@ -300,6 +300,7 @@ class MainActivity : AppCompatActivity() {
                         enableInput(false)
                     }
                     is LlamaState.ModelReady -> {
+                        hasAutoLoaded = true
                         isModelReady = true
                         loadedModelId = LlamaEngine.getSelectedModel(applicationContext).id
                         enableInput(true)

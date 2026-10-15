@@ -31,6 +31,7 @@ import java.net.URL
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 
 private class ContextCapacityException(message: String) : RuntimeException(message)
 
@@ -1271,15 +1272,25 @@ class LlamaEngine private constructor(
     }
 
     /** Cancel then wait for native work/metrics to finish; never block the Android main thread. */
+    private val unloadPending = AtomicBoolean(false)
+
     fun requestUnload() {
+        if (!unloadPending.compareAndSet(false, true)) return
         _cancelGeneration = true
         llamaScope.launch {
-            state.first {
-                it is LlamaState.ModelReady || it is LlamaState.Error ||
-                    it is LlamaState.Initialized || it is LlamaState.Uninitialized
+            try {
+                state.first {
+                    it is LlamaState.ModelReady || it is LlamaState.Error ||
+                        it is LlamaState.Initialized || it is LlamaState.Uninitialized
+                }
+                if (state.value is LlamaState.ModelReady || state.value is LlamaState.Error) {
+                    unloadModel()
+                } else {
+                    InferenceServiceLease.release(context)
+                }
+            } finally {
+                unloadPending.set(false)
             }
-            unloadModel()
-            InferenceServiceLease.release(context)
         }
     }
 
