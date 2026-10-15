@@ -72,6 +72,14 @@ jobs:
           cp MiniCPM-V-demo-Android/app/build/outputs/apk/release/app-release.apk dist/MiniCPM-V-demo-Android-v2.7.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/*.apk > dist/package-info.txt
           grep "package: name='com.zhang.minicpmv' versionCode='19' versionName='2.7'" dist/package-info.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree dist/*.apk AndroidManifest.xml > dist/manifest-info.txt
+          grep -E 'android:appCategory.*0x0+$' dist/manifest-info.txt
+          grep 'InferenceForegroundService' dist/manifest-info.txt
+          grep 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' dist/manifest-info.txt
+          grep -E 'android:foregroundServiceType.*0x40000000' dist/manifest-info.txt
+          unzip -p dist/*.apk lib/arm64-v8a/libminicpm_v_demo.so > "$RUNNER_TEMP/minicpm-jni-check.so"
+          "$ANDROID_HOME/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm" -D --defined-only "$RUNNER_TEMP/minicpm-jni-check.so" > dist/native-exports.txt
+          grep 'Java_com_example_minicpm_1v_1demo_LlamaEngine_getTurnStatsNative$' dist/native-exports.txt
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs dist/*.apk | tee dist/signature-verification.txt
           grep 'Verified using v2 scheme.*true' dist/signature-verification.txt
           grep 'Verified using v3 scheme.*true' dist/signature-verification.txt
