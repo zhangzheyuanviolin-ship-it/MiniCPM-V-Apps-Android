@@ -53,6 +53,8 @@ android {
     // an unsigned apk - useful e.g. on CI without secrets.
     signingConfigs {
         create("release") {
+            enableV2Signing = true
+            enableV3Signing = true
             val keystorePath = providers.gradleProperty("MINICPMV_KEYSTORE").orNull
             if (!keystorePath.isNullOrBlank()) {
                 storeFile = file(keystorePath)
