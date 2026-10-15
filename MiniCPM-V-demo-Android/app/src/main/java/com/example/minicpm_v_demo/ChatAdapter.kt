@@ -281,8 +281,8 @@ class ChatAdapter(
             return when {
                 oldItem is ChatMessage.UserMessage && newItem is ChatMessage.UserMessage ->
                     oldItem.text == newItem.text &&
-                            (oldItem.imageBitmap === newItem.imageBitmap ||
-                                    oldItem.imageBitmap?.sameAs(newItem.imageBitmap) == true) &&
+                            (oldItem.imageBitmap?.sameAs(newItem.imageBitmap)
+                                    ?: (newItem.imageBitmap == null)) &&
                             oldItem.imageInfo == newItem.imageInfo &&
                             oldItem.isPrefilling == newItem.isPrefilling &&
                             oldItem.isVideo == newItem.isVideo
