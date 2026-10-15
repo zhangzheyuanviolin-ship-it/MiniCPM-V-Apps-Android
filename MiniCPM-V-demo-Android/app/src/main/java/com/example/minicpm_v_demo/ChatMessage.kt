@@ -21,7 +21,8 @@ sealed class ChatMessage {
     data class AiMessage(
         override val id: Long,
         val text: String,
-        val isGenerating: Boolean = false
+        val isGenerating: Boolean = false,
+        val metrics: TurnMetrics? = null
     ) : ChatMessage()
 
     data class WelcomeCard(

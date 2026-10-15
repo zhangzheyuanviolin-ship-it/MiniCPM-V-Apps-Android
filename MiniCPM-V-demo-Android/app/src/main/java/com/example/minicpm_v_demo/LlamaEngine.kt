@@ -3,11 +3,13 @@ package com.example.minicpm_v_demo
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -908,6 +911,7 @@ class LlamaEngine private constructor(
     private external fun processSystemPrompt(systemPrompt: String): Int
     private external fun processUserPrompt(userPrompt: String, predictLength: Int): Int
     private external fun generateNextToken(): String?
+    private external fun getTurnStatsNative(): LongArray
     private external fun prefillImage(imageData: ByteArray, imageSize: Int): Int
     private external fun fullReset()
     private external fun nativeCancelGeneration()
@@ -963,6 +967,7 @@ class LlamaEngine private constructor(
                 Log.i(TAG, "Loading model... \n$pathToModel")
                 _readyForSystemPrompt = false
                 _state.value = LlamaState.LoadingModel
+                InferenceServiceLease.acquire(context)
                 val selected = getSelectedModel(context)
                 val experts = if (selected.isMoe) {
                     val directory = File(modelDirFor(context, selected))
@@ -1023,6 +1028,7 @@ class LlamaEngine private constructor(
                 _state.value = LlamaState.ModelReady
             } catch (e: Exception) {
                 try { unload() } catch (_: Exception) {}
+                withContext(NonCancellable) { InferenceServiceLease.release(context) }
                 _mmprojLoaded = false
                 Log.e(TAG, (e.message ?: "Error loading model") + "\n" + pathToModel, e)
                 _state.value = LlamaState.Error(e)
@@ -1189,47 +1195,58 @@ class LlamaEngine private constructor(
 
     fun sendUserPrompt(
         message: String,
-        predictLength: Int = DEFAULT_PREDICT_LENGTH
+        predictLength: Int = DEFAULT_PREDICT_LENGTH,
+        startedAtNanos: Long = SystemClock.elapsedRealtimeNanos(),
+        onMetrics: (TurnMetrics) -> Unit = {}
     ): Flow<String> = flow {
         require(message.isNotEmpty()) { "User prompt must not be empty!" }
         check(_state.value is LlamaState.ModelReady) {
             "User prompt discarded due to: ${_state.value.javaClass.simpleName}"
         }
-
+        val memory = TurnMemorySampler()
+        var firstTokenNanos: Long? = null
+        var failure: Exception? = null
         try {
             _cancelGeneration = false
-            Log.i(TAG, "Sending user prompt...")
             _readyForSystemPrompt = false
             _state.value = LlamaState.ProcessingUserPrompt
-
             processUserPrompt(message, predictLength).let { result ->
                 if (result != 0) {
                     if (result == 3) throw ContextCapacityException(context.getString(R.string.moe_context_full))
                     throw RuntimeException("Failed to process user prompt: $result")
                 }
             }
-
-            Log.i(TAG, "User prompt processed. Generating assistant prompt...")
             _state.value = LlamaState.Generating
             while (!_cancelGeneration) {
-                generateNextToken()?.let { utf8token ->
-                    if (utf8token.isNotEmpty()) emit(utf8token)
-                } ?: break
+                val token = generateNextToken() ?: break
+                if (token.isNotEmpty()) {
+                    if (firstTokenNanos == null) {
+                        firstTokenNanos = (SystemClock.elapsedRealtimeNanos() - startedAtNanos).coerceAtLeast(0)
+                    }
+                    emit(token)
+                }
             }
-            if (_cancelGeneration) {
-                Log.i(TAG, "Assistant generation aborted per requested.")
-            } else {
-                Log.i(TAG, "Assistant generation complete. Awaiting user prompt...")
-            }
-            _state.value = LlamaState.ModelReady
         } catch (e: CancellationException) {
-            Log.i(TAG, "Assistant generation's flow collection cancelled.")
-            _state.value = LlamaState.ModelReady
+            _cancelGeneration = true
+            failure = e
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error during generation!", e)
-            _state.value = if (e is ContextCapacityException) LlamaState.ModelReady else LlamaState.Error(e)
+            failure = e
+            Log.e(TAG, "Error during generation", e)
             throw e
+        } finally {
+            withContext(NonCancellable) {
+                try {
+                    val peak = memory.finish()
+                    onMetrics(TurnMetrics.fromNative(firstTokenNanos, getTurnStatsNative(), peak))
+                } catch (e: Exception) {
+                    Log.w(TAG, "Cannot finalize turn statistics", e)
+                } finally {
+                    val cause = failure
+                    _state.value = if (cause != null && cause !is CancellationException && cause !is ContextCapacityException)
+                        LlamaState.Error(cause) else LlamaState.ModelReady
+                }
+            }
         }
     }.flowOn(llamaDispatcher)
 
@@ -1241,14 +1258,28 @@ class LlamaEngine private constructor(
     }
 
     suspend fun unloadModel() = withContext(llamaDispatcher) {
-        if (_state.value is LlamaState.ModelReady) {
+        if (_state.value is LlamaState.ModelReady || _state.value is LlamaState.Error) {
             Log.i(TAG, "Unloading model...")
             _readyForSystemPrompt = false
             _mmprojLoaded = false
             _state.value = LlamaState.UnloadingModel
             unload()
+            InferenceServiceLease.release(context)
             _state.value = LlamaState.Initialized
             Log.i(TAG, "Model unloaded")
+        }
+    }
+
+    /** Cancel then wait for native work/metrics to finish; never block the Android main thread. */
+    fun requestUnload() {
+        _cancelGeneration = true
+        llamaScope.launch {
+            state.first {
+                it is LlamaState.ModelReady || it is LlamaState.Error ||
+                    it is LlamaState.Initialized || it is LlamaState.Uninitialized
+            }
+            unloadModel()
+            InferenceServiceLease.release(context)
         }
     }
 

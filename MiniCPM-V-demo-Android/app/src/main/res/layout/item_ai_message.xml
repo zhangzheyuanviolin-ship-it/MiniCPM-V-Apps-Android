@@ -90,6 +90,18 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="15sp"
                 android:lineSpacingMultiplier="1.2" />
+
+            <TextView
+                android:id="@+id/tv_turn_performance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="13sp"
+                android:lineSpacingMultiplier="1.25"
+                android:importantForAccessibility="yes"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

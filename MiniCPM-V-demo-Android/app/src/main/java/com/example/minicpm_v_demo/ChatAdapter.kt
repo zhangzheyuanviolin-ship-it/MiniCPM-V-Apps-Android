@@ -167,6 +167,7 @@ class ChatAdapter(
 
     inner class AiMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvText: TextView = itemView.findViewById(R.id.tv_ai_text)
+        private val tvPerformance: TextView = itemView.findViewById(R.id.tv_turn_performance)
         private val btnStop: MaterialButton = itemView.findViewById(R.id.btn_stop_generating)
         private val layoutThinking: View = itemView.findViewById(R.id.layout_thinking)
         private val layoutThinkingHeader: View = itemView.findViewById(R.id.layout_thinking_header)
@@ -184,6 +185,8 @@ class ChatAdapter(
                 (tvText.parent as? ViewGroup)?.minimumWidth = 0
             }
             renderWithThinking(item.text, item.isGenerating)
+            tvPerformance.text = item.metrics?.displayText(itemView.context) ?: ""
+            tvPerformance.visibility = if (item.metrics == null) View.GONE else View.VISIBLE
             btnStop.visibility = if (item.isGenerating) View.VISIBLE else View.GONE
             btnStop.setOnClickListener {
                 onStopClick?.invoke()
@@ -288,7 +291,8 @@ class ChatAdapter(
                             oldItem.isVideo == newItem.isVideo
                 oldItem is ChatMessage.AiMessage && newItem is ChatMessage.AiMessage ->
                     oldItem.isGenerating == newItem.isGenerating &&
-                            (oldItem.isGenerating || oldItem.text == newItem.text)
+                            (oldItem.isGenerating || oldItem.text == newItem.text) &&
+                            oldItem.metrics == newItem.metrics
                 oldItem is ChatMessage.WelcomeCard && newItem is ChatMessage.WelcomeCard ->
                     oldItem.isTextOnly == newItem.isTextOnly
                 else -> false

@@ -58,17 +58,20 @@ jobs:
                   out.write(k+'='+v+'\n')
           props.chmod(0o600)
           PY
-      - name: Build APK and run unit checks
+      - name: Run unit tests and release lint
         working-directory: MiniCPM-V-demo-Android
         run: |
           chmod +x gradlew
-          ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon --max-workers=2 -Dorg.gradle.jvmargs='-Xmx3g -Dfile.encoding=UTF-8'
+          ./gradlew :app:testDebugUnitTest :app:lintRelease --no-daemon --max-workers=2 -Dorg.gradle.jvmargs='-Xmx3g -Dfile.encoding=UTF-8'
+      - name: Build signed ARM64 APK
+        working-directory: MiniCPM-V-demo-Android
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -Dorg.gradle.jvmargs='-Xmx3g -Dfile.encoding=UTF-8'
       - name: Verify package and signature
         run: |
           mkdir -p dist
-          cp MiniCPM-V-demo-Android/app/build/outputs/apk/release/app-release.apk dist/MiniCPM-V-demo-Android-v2.6.apk
+          cp MiniCPM-V-demo-Android/app/build/outputs/apk/release/app-release.apk dist/MiniCPM-V-demo-Android-v2.7.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/*.apk > dist/package-info.txt
-          grep "package: name='com.zhang.minicpmv' versionCode='18' versionName='2.6'" dist/package-info.txt
+          grep "package: name='com.zhang.minicpmv' versionCode='19' versionName='2.7'" dist/package-info.txt
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs dist/*.apk | tee dist/signature-verification.txt
           grep 'Verified using v2 scheme.*true' dist/signature-verification.txt
           grep 'Verified using v3 scheme.*true' dist/signature-verification.txt
@@ -76,7 +79,7 @@ jobs:
           git rev-parse HEAD > dist/source-commit.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MiniCPM-V-Android-v2.6
+          name: MiniCPM-V-Android-v2.7
           path: dist/
           retention-days: 7
           if-no-files-found: error

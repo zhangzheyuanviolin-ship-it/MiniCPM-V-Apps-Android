@@ -191,4 +191,14 @@
     <string name="model_selected_a11y">Selected</string>
     <string name="model_unselected_a11y">Not selected</string>
     <string name="moe_context_full">Context capacity exceeded. Clear the conversation and try again.</string>
+
+    <string name="perf_unavailable">Unavailable</string>
+    <string name="perf_number">%1$.2f</string>
+    <string name="perf_turn_summary">First token latency: %1$s seconds\nPrefill: %2$s tokens/second\nDecode: %3$s tokens/second\nPeak memory: %4$s GiB (this turn, PSS sampled every second)</string>
+    <string name="inference_channel">Local model inference</string>
+    <string name="inference_notification_title">MiniCPM-V local model is active</string>
+    <string name="inference_notification_text">Model loading or resident. Return to chat or unload to release memory.</string>
+    <string name="inference_unload">Unload model and stop</string>
+    <string name="inference_service_failed">Cannot start the inference foreground service. Open the app and try again.</string>
+    <string name="generation_failed">Generation failed: %1$s</string>
 </resources>

@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <exception>
 #include <algorithm>
+#include <array>
+#include <chrono>
 
 #include "logging.h"
 #include "chat.h"
@@ -63,6 +65,21 @@ static int                                g_minicpmv_version = 0;
 static bool g_moe = false;
 static mtmd_bitmap * g_pending_bitmap = nullptr;
 static std::string g_experts_path;
+
+// Per turn: prompt token count / prompt nanoseconds / generated token count / decode nanoseconds.
+static std::array<jlong, 4> g_turn_stats{};
+static int64_t turn_clock_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+extern "C" JNIEXPORT jlongArray JNICALL
+Java_com_example_minicpm_1v_1demo_LlamaEngine_getTurnStatsNative(JNIEnv *env, jobject) {
+    auto result = env->NewLongArray(4);
+    if (result) env->SetLongArrayRegion(result, 0, 4, g_turn_stats.data());
+    return result;
+}
+
 
 // Most recent slice cap requested by the upper layer.  Persists across
 // loadMmproj calls so a user-chosen value survives e.g. an unload/reload
@@ -618,6 +635,8 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
         jstring juser_prompt,
         jint n_predict
 ) {
+    g_turn_stats.fill(0);
+    const int64_t prefill_started = turn_clock_ns();
     reset_short_term_states();
 
     const auto *const user_prompt = env->GetStringUTFChars(juser_prompt, nullptr);
@@ -682,12 +701,12 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
                                    g_pending_bitmap ? bitmaps : nullptr,
                                    g_pending_bitmap ? 1 : 0);
         if (g_pending_bitmap) { mtmd_bitmap_free(g_pending_bitmap); g_pending_bitmap = nullptr; }
-        if (g_moe && res == 0) {
-            size_t tokens = 0;
+        size_t prompt_tokens = 0;
+        if (res == 0) {
             for (size_t i = 0; i < mtmd_input_chunks_size(chunks); ++i) {
-                tokens += mtmd_input_chunk_get_n_tokens(mtmd_input_chunks_get(chunks, i));
+                prompt_tokens += mtmd_input_chunk_get_n_tokens(mtmd_input_chunks_get(chunks, i));
             }
-            if ((size_t) current_position + tokens + 32 >= (size_t) g_n_ctx) {
+            if (g_moe && (size_t) current_position + prompt_tokens + 32 >= (size_t) g_n_ctx) {
                 mtmd_input_chunks_free(chunks);
                 return 3;
             }
@@ -707,6 +726,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
             return 2;
         }
 
+        g_turn_stats[0] = (jlong) prompt_tokens;
         current_position = new_n_past;
         generation_start_position = current_position;
         mtmd_input_chunks_free(chunks);
@@ -729,10 +749,12 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
             return 2;
         }
 
+        g_turn_stats[0] = (jlong) user_tokens.size();
         current_position += user_prompt_size;
         generation_start_position = current_position;
     }
 
+    g_turn_stats[1] = turn_clock_ns() - prefill_started;
     stop_generation_position = current_position + n_predict;
     return 0;
 }
@@ -773,6 +795,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_generateNextToken(
         JNIEnv *env,
         jobject /*unused*/
 ) {
+    const int64_t decode_started = turn_clock_ns();
     if (current_position >= g_n_ctx - OVERFLOW_HEADROOM) {
         if (g_moe) return nullptr;
         LOGw("%s: Context full! Shifting...", __func__);
@@ -812,6 +835,8 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_generateNextToken(
         return nullptr;
     }
 
+    ++g_turn_stats[2];
+    g_turn_stats[3] += turn_clock_ns() - decode_started;
     auto new_token_chars = common_token_to_piece(g_context, new_token_id);
     cached_token_chars += new_token_chars;
 

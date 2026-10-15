@@ -11,6 +11,7 @@
          (declared in the service tag below as foregroundServiceType). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- Without this the screen-off CPU goes idle and HttpURLConnection's
          socket eventually times out mid-transfer. PARTIAL_WAKE_LOCK is held
          only while a download is actually in flight. -->
@@ -23,6 +24,7 @@
 
     <application
         android:name=".MiniCPMApplication"
+        android:appCategory="game"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -57,6 +59,14 @@
             android:label="@string/tts_title"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".InferenceForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-initiated offline large language and vision model loading, residency and local inference with a visible stop action" />
+        </service>
 
         <service
             android:name=".ModelDownloadService"

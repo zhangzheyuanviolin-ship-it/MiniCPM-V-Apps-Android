@@ -190,4 +190,14 @@
     <string name="model_selected_a11y">已选择</string>
     <string name="model_unselected_a11y">未选择</string>
     <string name="moe_context_full">本轮已超出上下文容量，请清空对话后重试。</string>
+
+    <string name="perf_unavailable">未产生有效数据</string>
+    <string name="perf_number">%1$.2f</string>
+    <string name="perf_turn_summary">首token延迟：%1$s 秒\n预填充速度：%2$s token/秒\n解码速度：%3$s token/秒\n峰值内存：%4$s GiB（本轮PSS，每秒采样）</string>
+    <string name="inference_channel">本地模型运行</string>
+    <string name="inference_notification_title">MiniCPM-V 本地模型运行中</string>
+    <string name="inference_notification_text">模型正在加载或已驻留，可返回聊天或卸载以释放内存</string>
+    <string name="inference_unload">卸载模型并停止</string>
+    <string name="inference_service_failed">无法启动模型前台服务，请回到应用前台后重试</string>
+    <string name="generation_failed">本轮生成失败：%1$s</string>
 </resources>

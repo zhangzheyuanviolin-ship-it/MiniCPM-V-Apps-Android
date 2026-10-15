@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -28,7 +29,8 @@ import com.google.android.material.textfield.TextInputEditText
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -614,6 +616,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        val turnStartedAt = SystemClock.elapsedRealtimeNanos()
         etInput.clearFocus()
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
             .hideSoftInputFromWindow(etInput.windowToken, 0)
@@ -647,39 +650,43 @@ class MainActivity : AppCompatActivity() {
 
         generationJob = lifecycleScope.launch(Dispatchers.Default) {
             val fullResponse = StringBuilder()
-            engine.sendUserPrompt(userMsg)
-                .onCompletion {
-                    withContext(Dispatchers.Main) {
-                        val index = messages.indexOfFirst { it.id == aiMsgId }
-                        if (index >= 0) {
-                            messages[index] = (messages[index] as ChatMessage.AiMessage).copy(
-                                text = fullResponse.toString(),
-                                isGenerating = false
-                            )
+            var metrics: TurnMetrics? = null
+            try {
+                engine.sendUserPrompt(userMsg, startedAtNanos = turnStartedAt, onMetrics = { metrics = it })
+                    .collect { token ->
+                        fullResponse.append(token)
+                        withContext(Dispatchers.Main) {
+                            val currentText = fullResponse.toString()
+                            val index = messages.indexOfFirst { it.id == aiMsgId }
+                            if (index >= 0) {
+                                messages[index] = ChatMessage.AiMessage(aiMsgId, currentText, isGenerating = true)
+                            }
+                            chatAdapter.updateStreamingText(aiMsgId, currentText)
+                            scrollToBottom()
                         }
-                        chatAdapter.setGeneratingDone(aiMsgId)
-                        chatAdapter.clearActiveAiMessage()
-                        chatAdapter.submitList(messages.toList())
-                        enableInput(true)
-                        scrollToBottom()
                     }
-                }
-                .collect { token ->
-                    fullResponse.append(token)
-                    withContext(Dispatchers.Main) {
-                        val currentText = fullResponse.toString()
-                        val index = messages.indexOfFirst { it.id == aiMsgId }
-                        if (index >= 0) {
-                            messages[index] = ChatMessage.AiMessage(
-                                id = aiMsgId,
-                                text = currentText,
-                                isGenerating = true
-                            )
-                        }
-                        chatAdapter.updateStreamingText(aiMsgId, currentText)
-                        scrollToBottom()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Generation failed", e)
+                if (fullResponse.isNotEmpty()) fullResponse.append("\n\n")
+                fullResponse.append(getString(R.string.generation_failed, e.message ?: e.javaClass.simpleName))
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main) {
+                    val index = messages.indexOfFirst { it.id == aiMsgId }
+                    if (index >= 0) {
+                        messages[index] = ChatMessage.AiMessage(
+                            aiMsgId, fullResponse.toString(), isGenerating = false,
+                            metrics = metrics ?: TurnMetrics(null, 0, 0, 0, 0, 0)
+                        )
                     }
+                    chatAdapter.setGeneratingDone(aiMsgId)
+                    chatAdapter.clearActiveAiMessage()
+                    chatAdapter.submitList(messages.toList())
+                    enableInput(engine.state.value is LlamaState.ModelReady)
+                    scrollToBottom()
                 }
+            }
         }
     }
 
@@ -746,13 +753,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        if (generationJob?.isActive == true && ::engine.isInitialized) engine.cancelGeneration()
         generationJob?.cancel()
         super.onStop()
     }
 
     override fun onDestroy() {
         if (isFinishing && !isLocaleRestart && ::engine.isInitialized) {
-            engine.destroy()
+            engine.requestUnload()
         }
         super.onDestroy()
     }
