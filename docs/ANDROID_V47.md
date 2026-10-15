@@ -1,0 +1,29 @@
+# MiniCPM-V 4.7 Android build
+
+This fork adds the 35B-A3B model to the Android app. The app runs locally after its files have been downloaded. It does not contain model weights or require a chat API key.
+
+## Installation and download
+
+The APK is `MiniCPM-V-demo-Android-v2.6.apk`, version code 18, application ID `com.zhang.minicpmv`. It uses a dedicated signing key so it can coexist with an official installation. Future updates of this fork must keep that signing key.
+
+The first model in Model Management is MiniCPM-V 4.7 35B-A3B. Download its 43 files in the app, then load it. The complete download is 16,623,585,508 bytes: the LES main GGUF, vision projector, experts manifest and 40 expert shards. Other listed models are optional and are not downloaded automatically.
+
+Downloads use HTTPS, fall back between HuggingFace and ModelScope, resume partial files, verify every file against a pinned SHA-256 and size, and rename verified files in place. No second archive or extracted copy is needed. Partial downloads survive interruption. Deleting this model also deletes its experts and partial files; the loaded model is released first.
+
+## CPU backend changes
+
+The shared backend is pinned at `96bbf61710d44421ea54e63f5194f9b17c20d877`. The patch in `patches/android-cpu-les.patch` enables writable ordinary CPU buffers for expert tensors when both mmap and weight repacking are disabled. The app applies those two settings only for the MoE model. The submodule's tracked revision and branch remain unchanged; CI applies the patch to its checkout before compilation.
+
+The app uses a 256-slot prefill bank, a 32-token micro-batch, four computation threads, four I/O threads and lookahead prefetch depth four. Decode cache width is selected conservatively from available memory, between 16 and 64 experts per layer. The full trained top-8 routing is preserved. This build does not include DSpark speculative decoding or an Android GPU backend, and Apple benchmark speeds do not describe it.
+
+For V4.7, images are inserted inside their ChatML user turn and their evaluation is deferred until the user prompt. Thinking is disabled by default. The recurrent context is 4096 tokens; it is not subjected to the old attention-only prefix-shifting routine. Oversized user turns return a message asking the user to clear the conversation, and generation stops safely at the context boundary.
+
+## Cloud verification
+
+The Android workflow installs SDK 36.1, NDK 27.0.12077973, CMake 4.1.2 and JDK 21, uses the repository's Gradle 9.3.1 wrapper checksum, runs unit tests and release lint, builds a signed ARM64 APK, checks its application ID/version and verifies APK v2/v3 signatures. It uploads the APK, SHA-256 and verification records as a short-lived Actions artifact. Signing credentials are encrypted Actions secrets and are never committed.
+
+The separate CPU LES workflow generates tiny deterministic hybrid Qwen3.5 MoE weights and compares every finite output logit from an inline model against the same model with streamed experts, across multiple decode steps. It downloads no published model weights. This checks the CPU expert allocation and scheduling changes; it does not replace testing the complete 35B model on an Android device.
+
+## Storage and handoff
+
+All compilation takes place on GitHub-hosted runners. Local work contains only source text, small reference files, logs, and the requested APK. Keep task-specific temporary files until the user confirms installation and testing passed. Then remove only inventoried task files, preserving unrelated user data, the installed app and the chosen model files. Preserve access to the dedicated signing key for future upgrades.
