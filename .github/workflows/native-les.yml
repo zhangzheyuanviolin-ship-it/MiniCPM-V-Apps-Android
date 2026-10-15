@@ -25,7 +25,7 @@ jobs:
       - name: Generate tiny hybrid MoE fixture
         run: |
           python3 -m venv "$RUNNER_TEMP/les-python"
-          "$RUNNER_TEMP/les-python/bin/pip" install numpy
+          "$RUNNER_TEMP/les-python/bin/pip" install ./llama.cpp-omni/gguf-py
           PYTHONPATH=llama.cpp-omni/gguf-py "$RUNNER_TEMP/les-python/bin/python" scripts/make_cpu_les_fixture.py "$RUNNER_TEMP/fixture"
       - name: Build and compare CPU LES logits
         run: |
