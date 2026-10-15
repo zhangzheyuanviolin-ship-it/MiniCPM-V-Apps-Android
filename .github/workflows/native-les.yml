@@ -1,0 +1,34 @@
+name: CPU LES correctness
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'patches/**'
+      - 'scripts/native-les-test/**'
+      - 'scripts/make_cpu_les_fixture.py'
+      - '.github/workflows/native-les.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Apply CPU compatibility
+        run: git -C llama.cpp-omni apply ../patches/android-cpu-les.patch
+      - name: Generate tiny hybrid MoE fixture
+        run: |
+          python3 -m venv "$RUNNER_TEMP/les-python"
+          "$RUNNER_TEMP/les-python/bin/pip" install numpy
+          PYTHONPATH=llama.cpp-omni/gguf-py "$RUNNER_TEMP/les-python/bin/python" scripts/make_cpu_les_fixture.py "$RUNNER_TEMP/fixture"
+      - name: Build and compare CPU LES logits
+        run: |
+          cmake -S scripts/native-les-test -B "$RUNNER_TEMP/cpu-les" -DLLAMA_SOURCE="$GITHUB_WORKSPACE/llama.cpp-omni" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/cpu-les" --target cpu-les-test -j 4
+          "$RUNNER_TEMP/cpu-les/cpu-les-test" "$RUNNER_TEMP/fixture"
