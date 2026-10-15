@@ -14,6 +14,7 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -80,6 +81,8 @@ class ModelDownloadService : Service() {
                 }
                 ModelDownloadController.markCompleted()
                 updateNotification(getString(R.string.download_complete_short))
+            } catch (e: CancellationException) {
+                ModelDownloadController.markCancelled()
             } catch (e: Exception) {
                 Log.e(TAG, "Download failed", e)
                 ModelDownloadController.markFailed(e.message ?: e::class.java.simpleName)
@@ -91,6 +94,13 @@ class ModelDownloadService : Service() {
             }
         }
         return START_NOT_STICKY
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        downloadJob?.cancel()
+        releaseWakeLock()
+        stopForegroundCompat()
+        stopSelf()
     }
 
     override fun onDestroy() {
@@ -176,7 +186,7 @@ class ModelDownloadService : Service() {
             "MiniCPMV:ModelDownload"
         ).apply {
             setReferenceCounted(false)
-            acquire(30 * 60 * 1000L)
+            acquire(6 * 60 * 60 * 1000L)
         }
     }
 

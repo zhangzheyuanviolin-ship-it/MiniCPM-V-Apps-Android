@@ -1,0 +1,393 @@
+{
+  "revision": "8716e5209f308fd53f197ccd7d50c6fdcc2dc37d",
+  "total_bytes": 16623585508,
+  "files": [
+    {
+      "path": "MiniCPM-V-4_7-35B-A3B-mix_q3gud_im-les.gguf",
+      "size": 1662732800,
+      "sha256": "a1e700ae07b0d46ccf06b3fc65da503ef3adaeaa149b741a3da04fb48d8f2f83",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/MiniCPM-V-4_7-35B-A3B-mix_q3gud_im-les.gguf",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/MiniCPM-V-4_7-35B-A3B-mix_q3gud_im-les.gguf"
+      ]
+    },
+    {
+      "path": "experts/layer_000.bin",
+      "size": 346030080,
+      "sha256": "1f9654c9fb6b25637cf03d8b14e659bfbd89a1aea7f4cac4a789b181e4f4a1ca",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_000.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_000.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_001.bin",
+      "size": 346030080,
+      "sha256": "40d3c167dde4b1ff98291b539b153f25f94a0b5e25c64c08d535aaf6c837f6af",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_001.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_001.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_002.bin",
+      "size": 346030080,
+      "sha256": "d865fc3e45b30e966de6f97e982c9f519c4baa46a46ed223a483067fc7caa1de",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_002.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_002.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_003.bin",
+      "size": 346030080,
+      "sha256": "88f361388537f7165f0713b9d375559e9751b2ba6a2243b5e68979cd16dc272b",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_003.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_003.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_004.bin",
+      "size": 346030080,
+      "sha256": "732861fc81194ff92950b9386ebdd6eb0d3ff5b986799c55debbe47e63f24429",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_004.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_004.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_005.bin",
+      "size": 346030080,
+      "sha256": "1e4b7fff94281723beed8e3b54e416b2c7d8642fa6323caa1cfcf8557390b18d",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_005.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_005.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_006.bin",
+      "size": 346030080,
+      "sha256": "e1d325385b036482269f1def2b0c0823dbac8e5fb9e6ce660f02fb07482c4634",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_006.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_006.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_007.bin",
+      "size": 346030080,
+      "sha256": "f106d2b67d9ff85fa26057f5a48a79751e761e79b4a2656f9b282dc6c411668b",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_007.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_007.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_008.bin",
+      "size": 346030080,
+      "sha256": "153cc1893f2ad0c6f2b9524f75c03fd193d377b639908f9653f4643fb98c38fa",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_008.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_008.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_009.bin",
+      "size": 346030080,
+      "sha256": "854e3d25678c0382fa8de2cba4f34161f2ad3621c63bfba1c1127f8a4fcdebce",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_009.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_009.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_010.bin",
+      "size": 346030080,
+      "sha256": "c131ae1b2fba341f6ef45e083dc240133f86c7fa8cf2580867da5e0586e8f4ca",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_010.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_010.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_011.bin",
+      "size": 346030080,
+      "sha256": "9a1b86b34ac0ea05086cc513fd6a880a9243aaeec05a8eb72bd79d80b1380f2a",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_011.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_011.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_012.bin",
+      "size": 346030080,
+      "sha256": "ddee2f5ce14e4d24c3d2db5803df9c63b6a8f40d888b48708d92d18dcc7246d4",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_012.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_012.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_013.bin",
+      "size": 346030080,
+      "sha256": "6cd00f7aaa197bca95a99e61eee8dea124de7a37e1aa854871c02e84f60f2404",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_013.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_013.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_014.bin",
+      "size": 346030080,
+      "sha256": "311b4f38bbd784cfb38181bad3a8ed7a8789024d76aa26ce26eaabf85e8fee2a",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_014.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_014.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_015.bin",
+      "size": 346030080,
+      "sha256": "0c50d32e8ba833a771a7766f654631c2b8e227f47b41dc6a74548f4f0894ef71",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_015.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_015.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_016.bin",
+      "size": 346030080,
+      "sha256": "00ac8c46bed718c8c940e3fd84836e81cdd780a3d3d6ead6cacf88a8b805c98d",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_016.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_016.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_017.bin",
+      "size": 346030080,
+      "sha256": "fffa5fa6a328a6b2be2a80429dfcf2295560e3551f8b127fb122441b6da93882",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_017.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_017.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_018.bin",
+      "size": 346030080,
+      "sha256": "10377ee6c5ff037d116d9f4caab168621fb3956740f9b4b80350113da5302cef",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_018.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_018.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_019.bin",
+      "size": 346030080,
+      "sha256": "4633114d8b87977a202e04dbebaa52ca3c8f5c6794ef104a43c5231b2a0becd1",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_019.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_019.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_020.bin",
+      "size": 346030080,
+      "sha256": "d967bcc92c004e11668791688fcb0247da850018a45553f811c6881e71d03815",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_020.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_020.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_021.bin",
+      "size": 346030080,
+      "sha256": "a05575256072135db61248cb0d80e89f996bf635e416b615727dd7ec99b4eb77",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_021.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_021.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_022.bin",
+      "size": 346030080,
+      "sha256": "0f5c394d9b7bd2d2c8ca210020e76015a8bbbfac211cd107c9081433bc2dd238",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_022.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_022.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_023.bin",
+      "size": 346030080,
+      "sha256": "38e8157cc464ce82c5b6c7ec07283f939054122702242c16c5f31fb3ba7b0839",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_023.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_023.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_024.bin",
+      "size": 346030080,
+      "sha256": "f517c345f29839b1c8a72048099907a91b1fd52f8e2a0941731bbac71b112d38",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_024.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_024.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_025.bin",
+      "size": 346030080,
+      "sha256": "7206723d8d9ea943b60d647508c86de60ecad2c35a1b006064e3e43359218334",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_025.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_025.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_026.bin",
+      "size": 346030080,
+      "sha256": "7f89c3d6acb0f562e9a34b9ea128f2c12e6badd4f7b64cd98f7f3b2596ec6a1e",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_026.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_026.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_027.bin",
+      "size": 346030080,
+      "sha256": "0881b723a12a7a9af43e50a214313344660357ae2c783a7db96472e800f96956",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_027.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_027.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_028.bin",
+      "size": 346030080,
+      "sha256": "e80a5e6b41c923ae38cf1b28f05576016fb9a90691fa10acbaad8365a801a9bf",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_028.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_028.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_029.bin",
+      "size": 346030080,
+      "sha256": "45e746c3a8f466a659d21c9a05bc0c26fa5cb08a31720599e40c4604c8b6cf54",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_029.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_029.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_030.bin",
+      "size": 346030080,
+      "sha256": "5cbc97a4abe9ba59cdf0ce39033ec7055ae010645e460cdb9ce63a4dbb430410",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_030.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_030.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_031.bin",
+      "size": 346030080,
+      "sha256": "71ecf577e3f19734bfcbba0727d57b2726c0a6e947773a764c6f99c935aeb051",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_031.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_031.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_032.bin",
+      "size": 346030080,
+      "sha256": "1bd1eb63b2c9190a51ce8517b1ae27bceaf6ac11dcb3360c22f80f1e2ffdeee3",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_032.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_032.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_033.bin",
+      "size": 346030080,
+      "sha256": "76df4426c0ac90b986ab07898aace394fcd4f029e0053d574622f48fb2dbc1ab",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_033.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_033.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_034.bin",
+      "size": 346030080,
+      "sha256": "3f483cfd3a9650d870be3bf1b5e4f69d1221a4884881ea43c7612fb1ed4db5c9",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_034.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_034.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_035.bin",
+      "size": 346030080,
+      "sha256": "1155ad7cf8ea92770f2696834f612ed6da28c7ebcf29d3c481246a9b54f5452b",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_035.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_035.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_036.bin",
+      "size": 346030080,
+      "sha256": "7aef016b6188a5d482cee40b75759d0867aaf4c2ac1d6d14ab34068b705cde02",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_036.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_036.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_037.bin",
+      "size": 346030080,
+      "sha256": "d49097a466270cc3b8e829b97662c4cc84ba3333eedd27b7baec614eb87ca20e",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_037.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_037.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_038.bin",
+      "size": 346030080,
+      "sha256": "00607a0d9809afdc32f694cf4c14a816b7831fad0fef33bddb6367029c25ae4f",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_038.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_038.bin"
+      ]
+    },
+    {
+      "path": "experts/layer_039.bin",
+      "size": 346030080,
+      "sha256": "f1fa720c473167725563728aaba799a31f6627d0768f871afef8e6f2552a0cdf",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/layer_039.bin",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/layer_039.bin"
+      ]
+    },
+    {
+      "path": "experts/manifest.json",
+      "size": 73668,
+      "sha256": "53a1594165759d94e90687873cb49f250d096c0debbdc86c1b6c0f3a378e3048",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/experts/manifest.json",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/experts/manifest.json"
+      ]
+    },
+    {
+      "path": "mmproj-model-f16.gguf",
+      "size": 1119575840,
+      "sha256": "bff3b688e14c300eca273092c37c50a0ddfcc2054e079af1a0480edeed5d20f1",
+      "sources": [
+        "https://huggingface.co/tc-mb/MiniCPM-V-Apps-gguf/resolve/8716e5209f308fd53f197ccd7d50c6fdcc2dc37d/MiniCPM-V-4.7-35B-A3B/mmproj-model-f16.gguf",
+        "https://www.modelscope.cn/models/zerg13/MiniCPM-V-Apps-gguf/resolve/master/MiniCPM-V-4.7-35B-A3B/mmproj-model-f16.gguf"
+      ]
+    }
+  ]
+}

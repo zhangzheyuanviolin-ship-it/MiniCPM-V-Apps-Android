@@ -1,0 +1,35 @@
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -1308,6 +1308,12 @@
+         throw std::runtime_error(format("%s: no CPU backend found", __func__));
+     }
+ 
++    // CPU-only LES uses ordinary writable buffers. The caller must disable mmap
++    // and extra/repacked buffer types because expert slots are filled at runtime.
++    if (pimpl->moe_experts && !params.use_mmap && !params.use_extra_bufts) {
++        pimpl->alloc_only_buft.emplace(cpu_dev, ggml_backend_cpu_buffer_type());
++    }
++
+     // calculate the split points
+     bool all_zero = tensor_split == nullptr || std::all_of(tensor_split, tensor_split + n_devices(), [](float x) { return x == 0.0f; });
+     std::vector<float> splits(n_devices());
+@@ -1716,6 +1722,9 @@
+         return s && *s && *s != '0';
+     }();
+ 
++    if (!dev && pimpl->moe_experts && !params.use_mmap && !params.use_extra_bufts) {
++        dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
++    }
+     const auto it = dev ? pimpl->alloc_only_buft.find(dev) : pimpl->alloc_only_buft.end();
+     if (it == pimpl->alloc_only_buft.end() || disabled) {
+         return create_tensor(ml, tn, ne, flags);
+@@ -1740,6 +1749,9 @@
+         ? nullptr
+         : ggml_backend_buft_get_device(pimpl->dev_layer.at(tn.bid).buft_list->front().second);
+ 
++    if (!dev && pimpl->moe_experts && !params.use_mmap && !params.use_extra_bufts) {
++        dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
++    }
+     const auto it = dev ? pimpl->alloc_only_buft.find(dev) : pimpl->alloc_only_buft.end();
+     if (it == pimpl->alloc_only_buft.end()) {
+         throw std::runtime_error(format(

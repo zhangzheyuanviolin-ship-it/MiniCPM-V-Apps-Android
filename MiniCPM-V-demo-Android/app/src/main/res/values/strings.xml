@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MiniCPM-V-demo</string>
+    <string name="app_name">MiniCPM-V 4.7 本地版</string>
     <string name="app_title">MiniCPM-V</string>
     <string name="app_title_text">MiniCPM</string>
     <string name="welcome_title">Welcome to MiniCPM-V</string>
@@ -181,4 +181,13 @@
     <string name="tts_preset_load_failed">加载预设失败: %1$s</string>
     <string name="tts_baselm_missing">BaseLM GGUF 文件不存在，请下载模型</string>
     <string name="tts_acoustic_missing">Acoustic GGUF 文件不存在，请下载模型</string>
+    <string name="model_desc_v47">多模态专家模型，总参数350亿、激活约30亿；本地文件约16.6 GB，支持断点续传，建议12 GB以上内存。</string>
+    <string name="moe_need_space">剩余存储不足，本次下载至少需要 %1$d GB 可用空间。</string>
+    <string name="moe_check_file">校验文件 %1$d/%2$d：%3$s</string>
+    <string name="moe_download_progress">下载文件 %1$d/%2$d：%3$s，%4$d%%</string>
+    <string name="moe_incomplete">模型文件不完整，请前往模型管理继续下载。</string>
+    <string name="moe_experts_files">专家分片目录：40个分片及清单，含未完成下载</string>
+    <string name="model_selected_a11y">已选择</string>
+    <string name="model_unselected_a11y">未选择</string>
+    <string name="moe_context_full">本轮已超出上下文容量，请清空对话后重试。</string>
 </resources>

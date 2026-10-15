@@ -47,7 +47,8 @@ data class ModelInfo(
     val directAcousticUrl: String? = null,
     val ggufMd5: String? = null,
     val mmprojMd5: String? = null,
-    val acousticMd5: String? = null
+    val acousticMd5: String? = null,
+    val isMoe: Boolean = false
 ) {
     /** True for text-only models that have no vision projector. */
     val isTextOnly: Boolean
@@ -59,7 +60,7 @@ data class ModelInfo(
 
     /** MiniCPM5 (text) and MiniCPM-V-4.6 expose a thinking toggle. */
     val supportsThinking: Boolean
-        get() = isTextOnly || id == "minicpm-v-4_6-instruct"
+        get() = isTextOnly || isMoe || id == "minicpm-v-4_6-instruct"
 
     fun getDescription(context: Context): String {
         val resId = context.resources.getIdentifier(descriptionResName, "string", context.packageName)
@@ -89,6 +90,14 @@ data class ModelInfo(
 
     companion object {
         val AVAILABLE_MODELS = listOf(
+            ModelInfo(
+                id = "minicpm-v-4_7-35b-a3b",
+                displayName = "MiniCPM-V 4.7 35B-A3B",
+                descriptionResName = "model_desc_v47",
+                ggufFileName = "MiniCPM-V-4_7-35B-A3B-mix_q3gud_im-les.gguf",
+                mmprojFileName = "mmproj-model-f16.gguf",
+                isMoe = true
+            ),
             ModelInfo(
                 id = "minicpm-v-4",
                 displayName = "MiniCPM-V-4 (Q4_K_M)",

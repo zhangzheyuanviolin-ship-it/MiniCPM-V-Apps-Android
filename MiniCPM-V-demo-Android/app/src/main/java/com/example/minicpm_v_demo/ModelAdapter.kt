@@ -35,6 +35,10 @@ class ModelAdapter(
         holder.tvSelected.text = if (isSelected) "●" else "○"
         holder.tvSelected.alpha = if (isSelected) 1.0f else 0.4f
 
+        holder.tvSelected.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        holder.itemView.isFocusable = true
+        holder.itemView.contentDescription = "${model.displayName}，${model.getDescription(holder.itemView.context)}，" +
+            holder.itemView.context.getString(if (isSelected) R.string.model_selected_a11y else R.string.model_unselected_a11y)
         holder.itemView.setOnClickListener {
             if (model.id != currentSelectedId) {
                 val oldIndex = models.indexOfFirst { it.id == currentSelectedId }

@@ -15,7 +15,7 @@ android {
         // `namespace` stays as the Kotlin package (it only names the generated R
         // class). `applicationId` is the real app identity seen by the device and
         // Play Store, so it must not be the `com.example.*` scaffold default.
-        applicationId = "com.tianchi.minicpmv"
+        applicationId = "com.zhang.minicpmv"
         // minSdk = 24 (Android 7.0) covers ~99% of in-use devices.
         // The native code only requires arm64-v8a (Android 5.0+), and the
         // app itself uses no Android 13+ APIs. The adaptive icon XML is
@@ -23,8 +23,8 @@ android {
         // to the WebP icons in mipmap-{m,h,xh,xxh,xxxh}dpi/.
         minSdk = 24
         targetSdk = 36
-        versionCode = 17
-        versionName = "2.5"
+        versionCode = 18
+        versionName = "2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

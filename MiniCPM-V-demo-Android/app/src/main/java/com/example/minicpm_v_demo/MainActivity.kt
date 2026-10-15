@@ -380,7 +380,7 @@ class MainActivity : AppCompatActivity() {
         val ggufMissing = !ggufFile.exists()
         val mmprojMissing = !model.isTextOnly && (mmprojFile == null || !mmprojFile.exists())
 
-        if (ggufMissing || mmprojMissing) {
+        if (ggufMissing || mmprojMissing || (model.isMoe && !LlamaEngine.modelsExist(ctx))) {
             promptDownloadModels(
                 ggufMissing = ggufMissing,
                 mmprojMissing = mmprojMissing

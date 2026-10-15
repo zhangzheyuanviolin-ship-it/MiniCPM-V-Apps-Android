@@ -159,6 +159,7 @@ class LlamaEngine private constructor(
 
         fun modelsExist(context: Context): Boolean {
             val model = getSelectedModel(context)
+            if (model.isMoe) return MoeModelFiles.ready(context, File(modelDirFor(context, model)))
             if (!File(modelPath(context)).exists()) return false
             if (model.isTextOnly) return true
             if (model.isTts) {
@@ -309,6 +310,7 @@ class LlamaEngine private constructor(
         // any future callers can reuse the same mapping without re-grepping
         // model ids in three places.
         fun inferMinicpmvVersion(model: ModelInfo): Int = when (model.id) {
+            "minicpm-v-4_7-35b-a3b" -> 47
             "minicpm-v-4_6-instruct" -> 46
             "minicpm-v-4"            -> 5
             else                     -> 0
@@ -336,6 +338,10 @@ class LlamaEngine private constructor(
             val model = getSelectedModel(context)
             val dir = File(modelDirFor(context, model))
             if (!dir.exists()) dir.mkdirs()
+            if (model.isMoe) {
+                MoeModelFiles.download(context, dir, onProgress)
+                return@withContext
+            }
 
             // Per file, build the *full* candidate-source list. HF + MS run
             // in parallel; directGgufUrl/directMmprojUrl, if present, are
@@ -877,7 +883,7 @@ class LlamaEngine private constructor(
     private var _readyForSystemPrompt = false
 
     private external fun init(nativeLibDir: String)
-    private external fun load(modelPath: String): Int
+    private external fun load(modelPath: String, expertsPath: String?, cacheWindow: Int): Int
     // image_max_slice_nums: 1..9 (or -1 for model default).  See JNI for
     // the semantics; the upper layer should pass MIN_IMAGE_SLICE..MAX_IMAGE_SLICE.
     private external fun loadMmproj(mmprojPath: String, imageMaxSliceNums: Int): Int
@@ -955,7 +961,24 @@ class LlamaEngine private constructor(
                 Log.i(TAG, "Loading model... \n$pathToModel")
                 _readyForSystemPrompt = false
                 _state.value = LlamaState.LoadingModel
-                load(pathToModel).let {
+                val selected = getSelectedModel(context)
+                val experts = if (selected.isMoe) {
+                    val directory = File(modelDirFor(context, selected))
+                    check(MoeModelFiles.ready(context, directory)) { context.getString(R.string.moe_incomplete) }
+                    File(directory, "experts").absolutePath
+                } else null
+                val memory = android.app.ActivityManager.MemoryInfo().also {
+                    (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(it)
+                }
+                val gib = 1024L * 1024 * 1024
+                val cacheWindow = when {
+                    memory.availMem >= 10 * gib -> 64
+                    memory.availMem >= 7 * gib -> 32
+                    else -> 16
+                }
+                setMinicpmvVersionNative(inferMinicpmvVersion(selected))
+                _mmprojLoaded = false
+                load(pathToModel, experts, cacheWindow).let {
                     if (it != 0) throw RuntimeException("Failed to load model (code: $it)")
                 }
 
@@ -971,7 +994,7 @@ class LlamaEngine private constructor(
                     Log.i(TAG, "Loading mmproj (image_max_slice_nums=$sliceCap)... \n$pathToMmproj")
                     loadMmproj(pathToMmproj, sliceCap).let {
                         if (it != 0) {
-                            Log.w(TAG, "Failed to load mmproj (code: $it), continuing without vision support")
+                            throw RuntimeException("Failed to load vision model (code: $it)")
                         } else {
                             _mmprojLoaded = true
                             // Upstream master mtmd dropped mtmd_get_minicpmv_version, so the
@@ -997,6 +1020,8 @@ class LlamaEngine private constructor(
                 setEnableThinkingNative(getEnableThinking(context))
                 _state.value = LlamaState.ModelReady
             } catch (e: Exception) {
+                try { unload() } catch (_: Exception) {}
+                _mmprojLoaded = false
                 Log.e(TAG, (e.message ?: "Error loading model") + "\n" + pathToModel, e)
                 _state.value = LlamaState.Error(e)
                 throw e
@@ -1177,8 +1202,8 @@ class LlamaEngine private constructor(
 
             processUserPrompt(message, predictLength).let { result ->
                 if (result != 0) {
-                    Log.e(TAG, "Failed to process user prompt: $result")
-                    return@flow
+                    throw RuntimeException(if (result == 3) context.getString(R.string.moe_context_full)
+                        else "Failed to process user prompt: $result")
                 }
             }
 

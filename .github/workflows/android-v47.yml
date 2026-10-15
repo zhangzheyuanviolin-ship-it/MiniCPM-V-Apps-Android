@@ -1,0 +1,89 @@
+name: Android V4.7 APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'MiniCPM-V-demo-Android/**'
+      - 'patches/**'
+      - 'scripts/verify_android_v47.py'
+      - '.github/workflows/android-v47.yml'
+permissions:
+  contents: read
+concurrency:
+  group: android-v47-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install exact Android toolchain
+        run: sdkmanager 'platforms;android-36.1' 'build-tools;36.0.0' 'ndk;27.0.12077973' 'cmake;4.1.2'
+      - name: Verify model catalogue and apply CPU LES compatibility
+        run: |
+          python3 scripts/verify_android_v47.py
+          git -C llama.cpp-omni apply --check ../patches/android-cpu-les.patch
+          git -C llama.cpp-omni apply ../patches/android-cpu-les.patch
+      - name: Prepare dedicated signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.MINICPMV_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.MINICPMV_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MINICPMV_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.MINICPMV_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,pathlib,base64
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          key=root/'minicpmv.p12'
+          key.write_bytes(base64.b64decode(os.environ['KEYSTORE_B64'],validate=True))
+          key.chmod(0o600)
+          props=pathlib.Path.home()/'.gradle/gradle.properties'
+          props.parent.mkdir(parents=True,exist_ok=True)
+          with props.open('a') as out:
+              for k,v in {'MINICPMV_KEYSTORE':str(key),'MINICPMV_KEYSTORE_PASSWORD':os.environ['STORE_PASSWORD'],'MINICPMV_KEY_ALIAS':os.environ['KEY_ALIAS'],'MINICPMV_KEY_PASSWORD':os.environ['KEY_PASSWORD']}.items():
+                  out.write(k+'='+v+'\n')
+          props.chmod(0o600)
+          PY
+      - name: Build APK and run unit checks
+        working-directory: MiniCPM-V-demo-Android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon --max-workers=2 -Dorg.gradle.jvmargs='-Xmx3g -Dfile.encoding=UTF-8'
+      - name: Verify package and signature
+        run: |
+          mkdir -p dist
+          cp MiniCPM-V-demo-Android/app/build/outputs/apk/release/app-release.apk dist/MiniCPM-V-demo-Android-v2.6.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/*.apk > dist/package-info.txt
+          grep "package: name='com.zhang.minicpmv' versionCode='18' versionName='2.6'" dist/package-info.txt
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs dist/*.apk | tee dist/signature-verification.txt
+          grep 'Verified using v2 scheme.*true' dist/signature-verification.txt
+          grep 'Verified using v3 scheme.*true' dist/signature-verification.txt
+          (cd dist && sha256sum *.apk > SHA256SUMS)
+          git rev-parse HEAD > dist/source-commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiniCPM-V-Android-v2.6
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-build-diagnostics
+          path: |
+            MiniCPM-V-demo-Android/app/build/reports/
+            MiniCPM-V-demo-Android/app/.cxx/**/CMakeConfigureLog.yaml
+          retention-days: 3

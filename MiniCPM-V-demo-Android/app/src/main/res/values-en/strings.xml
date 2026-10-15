@@ -178,4 +178,13 @@
     <string name="tts_preset_load_failed">Failed to load preset: %1$s</string>
     <string name="tts_baselm_missing">BaseLM GGUF file missing, please download</string>
     <string name="tts_acoustic_missing">Acoustic GGUF file missing, please download</string>
+    <string name="model_desc_v47">Multimodal MoE: 35B total, 3B active. About 16.6 GB on disk; resumable download. 12 GB+ RAM recommended.</string>
+    <string name="moe_need_space">Not enough storage. At least %1$d GB free is needed for this download.</string>
+    <string name="moe_check_file">Verifying file %1$d/%2$d: %3$s</string>
+    <string name="moe_download_progress">Downloading file %1$d/%2$d: %3$s, %4$d%%</string>
+    <string name="moe_incomplete">Model files are incomplete. Continue downloading in Model Management.</string>
+    <string name="moe_experts_files">Experts directory: 40 shards and manifest, including partial downloads</string>
+    <string name="model_selected_a11y">Selected</string>
+    <string name="model_unselected_a11y">Not selected</string>
+    <string name="moe_context_full">Context capacity exceeded. Clear the conversation and try again.</string>
 </resources>

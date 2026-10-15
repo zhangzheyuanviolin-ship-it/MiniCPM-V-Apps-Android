@@ -92,6 +92,11 @@ class ModelManagerActivity : AppCompatActivity() {
             selectedModelId = selectedModel.id,
             onModelSelected = { model ->
                 val previousModelId = LlamaEngine.getSelectedModel(this).id
+                if (ModelDownloadController.isRunning) {
+                    modelAdapter.updateSelection(previousModelId)
+                    Toast.makeText(this, R.string.toast_downloading, Toast.LENGTH_SHORT).show()
+                    return@ModelAdapter
+                }
                 LlamaEngine.setSelectedModel(this, model.id)
                 updateLoadButtonState()
 
@@ -114,7 +119,7 @@ class ModelManagerActivity : AppCompatActivity() {
         val model = LlamaEngine.getSelectedModel(this)
         val modelPath = LlamaEngine.modelPath(applicationContext)
 
-        if (!File(modelPath).exists()) {
+        if (!LlamaEngine.modelsExist(this)) {
             tvModelStatus.text = getString(R.string.switched_to_download, model.displayName)
             lifecycleScope.launch(Dispatchers.IO) {
                 try { engine.unloadModel() } catch (_: Exception) {}
@@ -319,7 +324,7 @@ class ModelManagerActivity : AppCompatActivity() {
         val modelPath = LlamaEngine.modelPath(applicationContext)
         val mmprojPath = LlamaEngine.mmprojPath(applicationContext)
 
-        if (!File(modelPath).exists()) {
+        if (!LlamaEngine.modelsExist(this)) {
             Toast.makeText(this, R.string.toast_model_not_found, Toast.LENGTH_LONG).show()
             return
         }
@@ -363,9 +368,11 @@ class ModelManagerActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteModel() {
+        if (ModelDownloadController.isRunning) return
         val model = LlamaEngine.getSelectedModel(this)
         val fileList = buildString {
             append("• ${model.ggufFileName}")
+            if (model.isMoe) append("\n" + getString(R.string.moe_experts_files))
             if (model.mmprojFileName != null) {
                 append("\n• ${model.mmprojFileName}")
             }
@@ -385,6 +392,11 @@ class ModelManagerActivity : AppCompatActivity() {
                 val mmprojPath = LlamaEngine.mmprojPath(applicationContext)
 
                 var deleted = false
+                val selected = LlamaEngine.getSelectedModel(applicationContext)
+                engine.unloadModel()
+                if (selected.isMoe) {
+                    deleted = File(LlamaEngine.modelDirFor(applicationContext, selected)).deleteRecursively()
+                }
                 File(modelPath).let { if (it.exists()) { it.delete(); deleted = true } }
                 mmprojPath?.let { File(it) }?.let { if (it.exists()) { it.delete(); deleted = true } }
                 // Also delete the acoustic GGUF for TTS models
