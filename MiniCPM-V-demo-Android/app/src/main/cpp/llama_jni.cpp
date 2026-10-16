@@ -867,7 +867,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_generateNextToken(
         shift_context();
     }
 
-    if (current_position >= stop_generation_position) {
+    if (g_turn_stats[2] >= g_turn_stats[7]) {
         LOGw("%s: STOP: hitting stop position: %d", __func__, stop_generation_position);
         g_turn_stats[4] = 1;
         return nullptr;
