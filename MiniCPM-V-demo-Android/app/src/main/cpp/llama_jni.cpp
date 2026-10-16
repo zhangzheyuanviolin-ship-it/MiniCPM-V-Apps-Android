@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <deque>
 
 #include "logging.h"
 #include "chat.h"
@@ -65,9 +66,27 @@ static int                                g_minicpmv_version = 0;
 static bool g_moe = false;
 static mtmd_bitmap * g_pending_bitmap = nullptr;
 static std::string g_experts_path;
+struct InferenceOptions {
+    int context = 16384;
+    float temperature = 1.0f;
+    float top_p = 0.95f;
+    int top_k = 20;
+    float min_p = 0.0f;
+    float repeat_penalty = 1.0f;
+    int repeat_last_n = 64;
+    int seed = -1;
+};
+static InferenceOptions g_options;
+static std::deque<llama_token> g_repetition_history;
+static void remember_token(llama_token token, bool generated) {
+    common_sampler_accept(g_sampler, token, generated);
+    g_repetition_history.push_back(token);
+    if (g_repetition_history.size() > 4096) g_repetition_history.pop_front();
+}
+
 
 // Per turn: prompt token count / prompt nanoseconds / generated token count / decode nanoseconds.
-static std::array<jlong, 4> g_turn_stats{};
+static std::array<jlong, 8> g_turn_stats{};
 static int64_t turn_clock_ns() {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -75,8 +94,8 @@ static int64_t turn_clock_ns() {
 
 extern "C" JNIEXPORT jlongArray JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_getTurnStatsNative(JNIEnv *env, jobject) {
-    auto result = env->NewLongArray(4);
-    if (result) env->SetLongArrayRegion(result, 0, 4, g_turn_stats.data());
+    auto result = env->NewLongArray(8);
+    if (result) env->SetLongArrayRegion(result, 0, 8, g_turn_stats.data());
     return result;
 }
 
@@ -297,29 +316,54 @@ static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT
 }
 
 static common_sampler *new_sampler(float temp) {
-    // Match the model's generation_config defaults: pure temperature sampling
-    // with top_k / top_p disabled and no repetition penalty. Keep this in
-    // lockstep with mtmd-ios.cpp so iOS and Android produce identical
-    // distributions for a given seed.
     common_params_sampling sparams;
     sparams.temp = temp;
-    sparams.top_k = 0;            // disabled
-    sparams.top_p = 1.0f;         // disabled
-    sparams.penalty_repeat = 1.0f; // disabled
+    sparams.top_k = g_options.top_k;
+    sparams.top_p = g_options.top_p;
+    sparams.min_p = g_options.min_p;
+    sparams.penalty_repeat = g_options.repeat_penalty;
+    sparams.penalty_last_n = g_options.repeat_last_n;
+    sparams.n_prev = std::max(64, g_options.repeat_last_n);
+    sparams.seed = g_options.seed < 0 ? LLAMA_DEFAULT_SEED : (uint32_t) g_options.seed;
     return common_sampler_init(g_model, sparams);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_example_minicpm_1v_1demo_LlamaEngine_configureInferenceNative(
+        JNIEnv *, jobject, jint context, jfloat temperature, jfloat top_p, jint top_k,
+        jfloat min_p, jfloat repeat_penalty, jint repeat_last_n, jint seed) {
+    if (context < 2048 || context > 262144 || !std::isfinite(temperature) || temperature < 0 || temperature > 2 ||
+        !std::isfinite(top_p) || top_p <= 0 || top_p > 1 || top_k < 0 || top_k > 1000 ||
+        !std::isfinite(min_p) || min_p < 0 || min_p > 1 || !std::isfinite(repeat_penalty) ||
+        repeat_penalty < 0.5f || repeat_penalty > 2 || repeat_last_n < 0 || repeat_last_n > 4096 || seed < -1) return 1;
+    if (g_model && context > (int) llama_model_n_ctx_train(g_model)) return 2;
+    const auto previous = g_options;
+    const bool sampling_changed = temperature != previous.temperature || top_p != previous.top_p ||
+        top_k != previous.top_k || min_p != previous.min_p || repeat_penalty != previous.repeat_penalty ||
+        repeat_last_n != previous.repeat_last_n || seed != previous.seed;
+    g_options = {context, temperature, top_p, top_k, min_p, repeat_penalty, repeat_last_n, seed};
+    if (g_sampler && sampling_changed) {
+        try {
+            auto * next = new_sampler(g_options.temperature);
+            if (!next) { g_options = previous; return 1; }
+            for (auto token : g_repetition_history) common_sampler_accept(next, token, false);
+            common_sampler_free(g_sampler);
+            g_sampler = next;
+        } catch (const std::exception & e) {
+            LOGe("Sampling configuration failed: %s", e.what());
+            g_options = previous;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_prepare(JNIEnv * /*env*/, jobject /*unused*/) {
-    // MiniCPM-V-4.6 video understanding (up to 64 frames per turn) needs
-    // a larger KV budget than the 4096 default; everything else stays at
-    // 4096 to keep memory pressure low on older / non-vision models.
-    // Matches the iOS demo's MTMDParams.nCtx = 8192 on V46MultiModel.
-    const bool is_v46 = (g_minicpmv_version == 46) ||
-                        (g_minicpmv_version == 460) ||
-                        (g_minicpmv_version == 461);
-    const int  n_ctx  = is_v46 ? V46_CONTEXT_SIZE : DEFAULT_CONTEXT_SIZE;
+    // Validated per-model settings; total context includes input, history and output.
+    const int n_ctx = g_options.context;
+    if (n_ctx > (int) llama_model_n_ctx_train(g_model)) return 2;
     LOGi("%s: minicpmv_version=%d -> n_ctx=%d", __func__, g_minicpmv_version, n_ctx);
 
     auto *context = init_context(g_model, n_ctx);
@@ -328,8 +372,8 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_prepare(JNIEnv * /*env*/, jobject 
     g_n_ctx = n_ctx;
     g_batch = llama_batch_init(BATCH_SIZE, 0, 1);
     g_chat_templates = common_chat_templates_init(g_model, "");
-    g_sampler = new_sampler(DEFAULT_SAMPLER_TEMP);
-    return 0;
+    g_sampler = new_sampler(g_options.temperature);
+    return g_sampler ? 0 : 1;
 }
 
 extern "C"
@@ -351,6 +395,7 @@ static bool g_vision_mode = false;
 
 static void reset_long_term_states(const bool clear_kv_cache = true) {
     chat_msgs.clear();
+    g_repetition_history.clear();
     system_prompt_position = 0;
     current_position = 0;
     g_image_prefilled = false;
@@ -591,35 +636,42 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_prefillImage(
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_fullReset(JNIEnv *, jobject) {
+    if (!g_model || g_options.context > (int) llama_model_n_ctx_train(g_model)) return 2;
+    g_n_ctx = g_options.context;
     reset_long_term_states();
     reset_short_term_states();
 
-    common_sampler_free(g_sampler);
+    if (g_sampler) common_sampler_free(g_sampler);
     g_sampler = nullptr;
     g_chat_templates.reset();
-    llama_batch_free(g_batch);
-    llama_free(g_context);
+    if (g_batch.token) llama_batch_free(g_batch);
+    g_batch = {};
+    if (g_context) llama_free(g_context);
     g_context = nullptr;
 
     auto *context = init_context(g_model, g_n_ctx);
     if (!context) {
         LOGe("%s: Failed to reinitialize context!", __func__);
-        return;
+        return 1;
     }
     g_context = context;
     g_batch = llama_batch_init(BATCH_SIZE, 0, 1);
     g_chat_templates = common_chat_templates_init(g_model, "");
-    g_sampler = new_sampler(DEFAULT_SAMPLER_TEMP);
+    g_sampler = new_sampler(g_options.temperature);
+    if (!g_sampler) return 1;
 
     LOGi("%s: Full reset complete - context recreated, KV cache fresh, sampler reinitialized", __func__);
+    return 0;
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_nativeCancelGeneration(JNIEnv *, jobject) {
+    if (!g_sampler) return;
     common_sampler_reset(g_sampler);
+    for (auto token : g_repetition_history) common_sampler_accept(g_sampler, token, false);
     assistant_ss.str("");
     assistant_ss.clear();
     cached_token_chars.clear();
@@ -636,6 +688,8 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
         jint n_predict
 ) {
     g_turn_stats.fill(0);
+    g_turn_stats[6] = g_n_ctx;
+    g_turn_stats[7] = n_predict;
     const int64_t prefill_started = turn_clock_ns();
     reset_short_term_states();
 
@@ -707,6 +761,8 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
                 prompt_tokens += mtmd_input_chunk_get_n_tokens(mtmd_input_chunks_get(chunks, i));
             }
             if (g_moe && (size_t) current_position + prompt_tokens + 32 >= (size_t) g_n_ctx) {
+                g_turn_stats[4] = 2;
+                g_turn_stats[5] = current_position;
                 mtmd_input_chunks_free(chunks);
                 return 3;
             }
@@ -726,6 +782,13 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
             return 2;
         }
 
+        for (size_t i = 0; i < mtmd_input_chunks_size(chunks); ++i) {
+            const auto * chunk = mtmd_input_chunks_get(chunks, i);
+            if (mtmd_input_chunk_get_type(chunk) != MTMD_INPUT_CHUNK_TYPE_TEXT) continue;
+            size_t count = 0;
+            const auto * ids = mtmd_input_chunk_get_tokens_text(chunk, &count);
+            if (ids) for (size_t j = 0; j < count; ++j) remember_token(ids[j], false);
+        }
         g_turn_stats[0] = (jlong) prompt_tokens;
         current_position = new_n_past;
         generation_start_position = current_position;
@@ -749,12 +812,14 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
             return 2;
         }
 
+        for (auto token : user_tokens) remember_token(token, false);
         g_turn_stats[0] = (jlong) user_tokens.size();
         current_position += user_prompt_size;
         generation_start_position = current_position;
     }
 
     g_turn_stats[1] = turn_clock_ns() - prefill_started;
+    g_turn_stats[5] = current_position;
     stop_generation_position = current_position + n_predict;
     return 0;
 }
@@ -797,31 +862,35 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_generateNextToken(
 ) {
     const int64_t decode_started = turn_clock_ns();
     if (current_position >= g_n_ctx - OVERFLOW_HEADROOM) {
-        if (g_moe) return nullptr;
+        if (g_moe) { g_turn_stats[4] = 2; return nullptr; }
         LOGw("%s: Context full! Shifting...", __func__);
         shift_context();
     }
 
     if (current_position >= stop_generation_position) {
         LOGw("%s: STOP: hitting stop position: %d", __func__, stop_generation_position);
+        g_turn_stats[4] = 1;
         return nullptr;
     }
 
     const auto new_token_id = common_sampler_sample(g_sampler, g_context, -1);
-    common_sampler_accept(g_sampler, new_token_id, true);
+    remember_token(new_token_id, true);
 
     const bool is_eog = llama_vocab_is_eog(llama_model_get_vocab(g_model), new_token_id);
 
     common_batch_clear(g_batch);
     common_batch_add(g_batch, new_token_id, current_position, {0}, true);
     if (llama_decode(g_context, g_batch) != 0) {
+        g_turn_stats[4] = 4;
         LOGe("%s: llama_decode() failed for generated token", __func__);
         return nullptr;
     }
 
     current_position++;
+    g_turn_stats[5] = current_position;
 
     if (is_eog) {
+        g_turn_stats[4] = 3;
         LOGd("id: %d,\tIS EOG!\nSTOP.", new_token_id);
         std::string assistant_content = assistant_ss.str();
         auto think_end = assistant_content.find("</think>");

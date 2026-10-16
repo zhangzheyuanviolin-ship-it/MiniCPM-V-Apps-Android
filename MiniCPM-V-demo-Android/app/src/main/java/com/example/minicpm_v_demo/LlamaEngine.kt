@@ -60,15 +60,8 @@ class LlamaEngine private constructor(
         @Volatile
         private var instance: LlamaEngine? = null
 
-        // Per-turn token budget. iOS demo (MTMDParams.swift) uses 100 because
-        // ANE makes generation fast enough that the cap is rarely hit; on
-        // Android with CPU-only inference users complained about replies
-        // getting truncated mid-sentence, so we raise it to a safer ceiling.
-        // 512 tokens is roughly 250-350 Chinese characters per turn, which
-        // covers the vast majority of single-turn answers; the n_ctx=4096
-        // buffer plus shift_context() in llama_jni.cpp still keeps multi-turn
-        // chats stable.
-        const val DEFAULT_PREDICT_LENGTH = 1024
+        // Actual output budgets come from validated, persisted per-model settings.
+        const val DEFAULT_PREDICT_LENGTH = 8192
 
         const val MODEL_SUBDIR = "models"
 
@@ -874,6 +867,7 @@ class LlamaEngine private constructor(
 
     @Volatile
     private var _mmprojLoaded = false
+    private var activeModelId: String? = null
 
     @ExperimentalCoroutinesApi
     private val llamaDispatcher = Dispatchers.IO.limitedParallelism(1)
@@ -914,7 +908,9 @@ class LlamaEngine private constructor(
     private external fun generateNextToken(): String?
     private external fun getTurnStatsNative(): LongArray
     private external fun prefillImage(imageData: ByteArray, imageSize: Int): Int
-    private external fun fullReset()
+    private external fun fullReset(): Int
+    private external fun configureInferenceNative(contextTokens: Int, temperature: Float, topP: Float, topK: Int,
+        minP: Float, repeatPenalty: Float, repeatLastN: Int, seed: Int): Int
     private external fun nativeCancelGeneration()
     private external fun unload()
     private external fun shutdown()
@@ -1019,9 +1015,11 @@ class LlamaEngine private constructor(
                     }
                 }
 
+                configureOptions(InferenceSettingsStore.read(context, selected))
                 prepare().let {
                     if (it != 0) throw RuntimeException("Failed to prepare resources (code: $it)")
                 }
+                activeModelId = selected.id
                 Log.i(TAG, "Model loaded!")
                 _readyForSystemPrompt = true
                 _cancelGeneration = false
@@ -1184,19 +1182,76 @@ class LlamaEngine private constructor(
         }
     }
 
+    private fun configureOptions(value: InferenceSettings) {
+        value.validate()
+        val result = configureInferenceNative(value.contextTokens, value.temperature, value.topP, value.topK,
+            value.minP, value.repeatPenalty, value.repeatLastN, value.seed)
+        check(result == 0) { context.getString(R.string.settings_native_rejected, result) }
+    }
+
+    suspend fun updateInferenceSettings(model: ModelInfo, value: InferenceSettings) = withContext(llamaDispatcher) {
+        value.validate()
+        val old = InferenceSettingsStore.read(context, model)
+        if (_state.value is LlamaState.ModelReady && model.id == activeModelId) {
+            _state.value = LlamaState.LoadingModel
+            var rebuildingContext = false
+            try {
+                configureOptions(value)
+                if (old.contextTokens != value.contextTokens) {
+                    rebuildingContext = true
+                    check(fullReset() == 0) { context.getString(R.string.settings_context_failed) }
+                    _readyForSystemPrompt = true
+                    markModelSwitched(context)
+                }
+                InferenceSettingsStore.write(context, model, value)
+                _state.value = LlamaState.ModelReady
+            } catch (e: Exception) {
+                if (rebuildingContext) {
+                    // Do not mark a failed context allocation as ready.
+                    try { unload() } catch (_: Exception) {}
+                    _mmprojLoaded = false
+                    withContext(NonCancellable) { InferenceServiceLease.release(context) }
+                    _state.value = LlamaState.Error(e)
+                } else {
+                    try { configureOptions(old) } catch (_: Exception) {}
+                    _state.value = LlamaState.ModelReady
+                }
+                throw e
+            }
+        } else {
+            check(_state.value is LlamaState.Initialized || _state.value is LlamaState.Uninitialized ||
+                _state.value is LlamaState.Initializing || _state.value is LlamaState.Error ||
+                (_state.value is LlamaState.ModelReady && activeModelId != model.id)) {
+                context.getString(R.string.settings_busy)
+            }
+            InferenceSettingsStore.write(context, model, value)
+        }
+    }
+
     suspend fun clearContext() =
         withContext(llamaDispatcher) {
             check(_state.value is LlamaState.ModelReady) {
                 "Cannot clear context in ${_state.value.javaClass.simpleName}"
             }
-            fullReset()
-            _readyForSystemPrompt = true
+            _state.value = LlamaState.LoadingModel
+            try {
+                check(fullReset() == 0) { context.getString(R.string.settings_context_failed) }
+                _readyForSystemPrompt = true
+                _state.value = LlamaState.ModelReady
+            } catch (e: Exception) {
+                try { unload() } catch (_: Exception) {}
+                _mmprojLoaded = false
+                activeModelId = null
+                withContext(NonCancellable) { InferenceServiceLease.release(context) }
+                _state.value = LlamaState.Error(e)
+                throw e
+            }
             Log.i(TAG, "Context fully reset - context recreated, ready for new conversation")
         }
 
     fun sendUserPrompt(
         message: String,
-        predictLength: Int = DEFAULT_PREDICT_LENGTH,
+        predictLength: Int? = null,
         startedAtNanos: Long = SystemClock.elapsedRealtimeNanos(),
         onMetrics: (TurnMetrics) -> Unit = {}
     ): Flow<String> = flow {
@@ -1211,7 +1266,9 @@ class LlamaEngine private constructor(
             _cancelGeneration = false
             _readyForSystemPrompt = false
             _state.value = LlamaState.ProcessingUserPrompt
-            processUserPrompt(message, predictLength).let { result ->
+            val activeModel = ModelInfo.AVAILABLE_MODELS.firstOrNull { it.id == activeModelId } ?: getSelectedModel(context)
+            val outputLimit = predictLength ?: InferenceSettingsStore.read(context, activeModel).maxOutputTokens
+            processUserPrompt(message, outputLimit).let { result ->
                 if (result != 0) {
                     if (result == 3) throw ContextCapacityException(context.getString(R.string.moe_context_full))
                     throw RuntimeException("Failed to process user prompt: $result")
@@ -1227,6 +1284,7 @@ class LlamaEngine private constructor(
                     emit(token)
                 }
             }
+            check(getTurnStatsNative()[4] != 4L) { context.getString(R.string.settings_decode_failed) }
         } catch (e: CancellationException) {
             _cancelGeneration = true
             failure = e
@@ -1239,7 +1297,10 @@ class LlamaEngine private constructor(
             withContext(NonCancellable) {
                 try {
                     val peak = memory.finish()
-                    onMetrics(TurnMetrics.fromNative(firstTokenNanos, getTurnStatsNative(), peak))
+                    val measured = TurnMetrics.fromNative(firstTokenNanos, getTurnStatsNative(), peak)
+                    onMetrics(if (_cancelGeneration && measured.stopReason == StopReason.UNKNOWN) measured.copy(stopReason = StopReason.USER_STOP)
+                        else if (failure != null && failure !is ContextCapacityException && failure !is CancellationException) measured.copy(stopReason = StopReason.ERROR)
+                        else measured)
                 } catch (e: Exception) {
                     Log.w(TAG, "Cannot finalize turn statistics", e)
                 } finally {
@@ -1265,6 +1326,7 @@ class LlamaEngine private constructor(
             _mmprojLoaded = false
             _state.value = LlamaState.UnloadingModel
             unload()
+            activeModelId = null
             InferenceServiceLease.release(context)
             _state.value = LlamaState.Initialized
             Log.i(TAG, "Model unloaded")

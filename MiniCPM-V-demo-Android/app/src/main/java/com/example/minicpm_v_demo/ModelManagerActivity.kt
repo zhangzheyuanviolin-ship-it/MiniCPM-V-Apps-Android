@@ -1,6 +1,7 @@
 package com.example.minicpm_v_demo
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -79,6 +80,10 @@ class ModelManagerActivity : AppCompatActivity() {
         observeDownloadStatus()
         updateLanguageDisplay()
 
+        findViewById<View>(R.id.btn_inference_settings).setOnClickListener {
+            if (!LlamaEngine.getSelectedModel(this).isTts) startActivity(Intent(this, InferenceSettingsActivity::class.java))
+            else Toast.makeText(this, R.string.settings_not_tts, Toast.LENGTH_SHORT).show()
+        }
         btnDownload.setOnClickListener { onDownloadClicked() }
         btnLoadModel.setOnClickListener { loadSelectedModel() }
         btnDeleteModel.setOnClickListener { confirmDeleteModel() }

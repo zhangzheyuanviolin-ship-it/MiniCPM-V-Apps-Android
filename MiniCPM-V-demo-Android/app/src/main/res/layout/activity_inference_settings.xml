@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="?attr/colorSurface"
+    android:focusableInTouchMode="true">
+    <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar"
+        android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="?attr/homeAsUpIndicator" app:title="@string/inference_settings" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="16dp" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/settings_intro" android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:text="@string/settings_context"
+                android:labelFor="@id/sp_context_tokens" android:textSize="16sp" />
+            <Spinner android:id="@+id/sp_context_tokens" android:layout_width="match_parent"
+                android:layout_height="56dp" android:spinnerMode="dropdown" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/settings_context_help" android:textSize="14sp" />
+            <LinearLayout android:id="@+id/settings_fields" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_save_settings"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" android:text="@string/settings_save" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_reset_settings"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/settings_reset" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -52,6 +52,9 @@
             android:label="@string/model_management"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".InferenceSettingsActivity"
+            android:exported="false" android:label="@string/inference_settings"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".TtsActivity"
             android:exported="false"

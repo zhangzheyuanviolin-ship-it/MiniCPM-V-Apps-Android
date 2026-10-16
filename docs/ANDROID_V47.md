@@ -4,7 +4,7 @@ This fork adds the 35B-A3B model to the Android app. The app runs locally after 
 
 ## Installation and download
 
-The APK is `MiniCPM-V-demo-Android-v2.7.apk`, version code 19, application ID `com.zhang.minicpmv`. It uses a dedicated signing key so it can coexist with an official installation. Future updates of this fork must keep that signing key.
+The APK is `MiniCPM-V-demo-Android-v2.8.apk`, version code 20, application ID `com.zhang.minicpmv`. It uses a dedicated signing key so it can coexist with an official installation. Future updates of this fork must keep that signing key.
 
 The first model in Model Management is MiniCPM-V 4.7 35B-A3B. Download its 43 files in the app, then load it. The complete download is 16,623,585,508 bytes: the LES main GGUF, vision projector, experts manifest and 40 expert shards. Other listed models are optional and are not downloaded automatically.
 
@@ -46,3 +46,23 @@ Each finished, stopped or failed assistant message has a separate accessible pla
 Statistics reset for every turn and are finalized before the engine becomes ready/unloadable again. Cancellation still finalizes the footer; absent first-token/rate/memory measurements display unavailable rather than fake zeros. Unit tests cover rate units, large counters, zero/failed evaluation, cancellation before a first token and invalid native schemas. Cloud release checks precede expensive native compilation.
 
 Android foreground-service type reference: https://developer.android.com/develop/background-work/services/fgs/service-types#special-use
+
+## Android v2.8 generation settings and output limits
+
+The tested v2.7 version had two distinct hard limits: 1,024 newly generated tokens per reply and a 4,096-token total context for V4.7. These are not character counts. Reaching either could previously produce a silent mid-sentence stop. User feedback confirms v2.7 no longer exhibited the earlier app termination on the target phone.
+
+Official V4.7 35B-A3B `config.json` declares `text_config.max_position_embeddings = 262144`. The revision-pinned phone split's GGUF prefix independently declares `qwen35moe.context_length = 262144`. This is a shared total window (history, text/visual input and output), not a guaranteed 262144-token response on a phone. The official app README and MTMDParams default to a 4096-token context; the Swift wrapper defaults to 100 predicted tokens. No official maximum output validated for this Android phone was found. Example `max_new_tokens=2048` values are example generation budgets, not model context capacity.
+
+V2.8 defaults V4.7 MoE to 16384 total context and 8192 maximum new tokens, retaining the tested foreground service/category policy, expert cache parameters, model paths and model files. Settings are per model under Model Management → Inference settings. The context selector offers 2048 through 262144; actual model trained-context limits are checked in native code. Output must be positive and leave 128 tokens of nominal input space; real history/visual input can further reduce remaining room. Large user-selected windows use more memory and have not been validated on every phone. The app does not assume that the model maximum is the mobile maximum.
+
+The official model generation configuration specifies temperature 1.0, top_p 0.95 and top_k 20; these are the V4.7 defaults in v2.8. The settings page also supports Min-P, repetition penalty and last-N range, and random/fixed seeds. Min-P defaults off and repetition penalty defaults to 1 (off). Repetition penalties now receive real textual prompt IDs and generated IDs, skipping image embeddings. A bounded 4096-token history is replayed into a replacement sampler so changing sampling parameters does not erase the conversation's penalty history.
+
+Sampling/output-budget changes preserve context and take effect next turn. Saving a changed context frees the old cache before allocating the new one while keeping the loaded weights and foreground protection. It clears native history and flags the chat UI to clear stale messages. Invalid settings are rejected; failed cache allocation unloads safely rather than leaving a null context marked ready.
+
+Every assistant footer retains the four performance measurements and adds actual output/requested-limit and context-usage/capacity counts plus a distinct end reason: model EOS, requested output limit, context capacity, user stop or inference failure. Generated thinking tokens count toward the requested output budget. There is no automatic hidden continuation or unlimited generation.
+
+References:
+- https://huggingface.co/openbmb/MiniCPM-V-4.7-35B-A3B/blob/main/config.json
+- https://huggingface.co/openbmb/MiniCPM-V-4.7-35B-A3B/blob/main/generation_config.json
+- https://github.com/OpenBMB/MiniCPM-V-Apps/blob/main/README.md
+- https://github.com/OpenBMB/MiniCPM-V-Apps/blob/main/MiniCPM-V-demo/MTMDWrapper/MTMDParams.swift
